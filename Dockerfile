@@ -1,29 +1,33 @@
-# Base image for Python
+# Use a base image with Python 3.9
 FROM python:3.9-slim
 
-# Set the working directory in the container
-WORKDIR /app
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
 
-# Copy the current directory contents into the container at /app
-COPY . /app
-
-# Install system dependencies
+# Install system dependencies and Rust
 RUN apt-get update && apt-get install -y \
-    libasound2-dev \
-    portaudio19-dev \
-    libportaudio2 \
-    libportaudiocpp0 \
+    build-essential \
+    curl \
     ffmpeg \
-    libsdl2-mixer-2.0-0 \
+    && curl https://sh.rustup.rs -sSf | sh -s -- -y \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+# Add Rust to PATH
+ENV PATH="/root/.cargo/bin:$PATH"
 
-RUN pip install --upgrade pip
+# Set the working directory
+WORKDIR /app
+
+# Copy requirements into the container
+COPY requirements.txt /app/
+
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Expose the application port
-EXPOSE 5000
+# Copy the application code into the container
+COPY . /app/
 
-# Command to run the application
-CMD ["python", "app.py"]
+# Specify the command to run the application
+CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "app:app"]
