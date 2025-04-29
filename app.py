@@ -1,5 +1,4 @@
-from flask import Flask, request, jsonify, send_file, render_template
-import sounddevice as sd
+from flask import Flask, request, jsonify, send_file
 import numpy as np
 import whisper
 from gtts import gTTS
@@ -8,16 +7,9 @@ import noisereduce as nr
 import Levenshtein
 import uuid
 from werkzeug.utils import secure_filename
-import pygame
-from pygame import mixer
 import soundfile as sf
 import logging
 from datetime import datetime, timedelta
-
-# Initialize pygame mixer with proper settings
-pygame.mixer.pre_init(44100, -16, 2, 4096)
-pygame.init()
-mixer.init()
 
 app = Flask(__name__)
 
@@ -80,8 +72,16 @@ def cleanup_old_files():
 
 @app.route('/')
 def home():
-    """Serve the interactive web interface."""
-    return render_template('index.html')
+    """API information"""
+    return jsonify({
+        "status": "success", 
+        "message": "Pronunciation Coach API is running",
+        "endpoints": {
+            "/upload_audio": "POST - Upload and analyze audio",
+            "/get_audio/<filename>": "GET - Retrieve audio file",
+            "/set_language": "POST - Set language for analysis"
+        }
+    })
 
 @app.route('/set_language', methods=['POST'])
 def set_language():
